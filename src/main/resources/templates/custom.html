@@ -1,0 +1,233 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <link href="css/hiprint.css" rel="stylesheet" />
+    <link href="css/print-lock.css" rel="stylesheet" />
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+   
+</head>
+<body>
+
+    <div style="display: flex; flex-direction: column; justify-content: center; padding: 5px; height: 100vh">
+        <div class="header">
+            <div class="left_return">
+                <a href="${initParam.schoolServerName}/auth/school/ticket/template/list.htm"><--返回上一级</a>
+            </div>
+            <div class="title">
+                <p style="align-self:center;max-width: 574px;font-size: xx-large">${template.name}</p>
+            </div>
+            <div class="right_button">
+                    <a class="hiprint-toolbar-item" onclick="rotatePaper()">旋转</a>
+                    <a class="hiprint-toolbar-item" onclick="clearTemplate()">清空</a>
+                    <a class="btn hiprint-toolbar-item " style="color: #fff;
+        background-color: #d9534f;
+        border-color: #d43f3a;" id="A4_preview">快速预览</a>
+                    <a class="btn hiprint-toolbar-item " style="color: #fff;
+        background-color: #d9534f;
+        border-color: #d43f3a;" id="A4_toPdf">保存为pdf</a>
+                    <a id="A4_directPrint" class="btn hiprint-toolbar-item " style="color: #fff;background-color: #d9534f;border-color: #d43f3a;">打印</a>
+
+                <div class="hiprint-printPagination">
+                    <ul class="hiprint-pagination">
+                        <li><span>1</span><a href="javascript:void(0);">x</a></li>
+                        <li><span>+</span></li>
+                    </ul>
+                </div>
+            </div>
+            <form id="formArea">
+                <input type="hidden" name="canvasStr" value='${template.canvasStr}'>
+                <input type="hidden" name="id" value='${template.id}'>
+                <input type="hidden" name="customEleIds">
+                <input type="hidden" name="pageNum" id="pic_num" value=${template.pageNum}>
+                <input type="hidden" name="direction" id="direction" value=${template.direction}>
+            </form>
+        </div>
+        <div style="display: flex; flex-direction: row; justify-content: space-between; background-color: gainsboro; height: calc(100% - 100px);">
+            <div class="tool">
+                <div class="rect-printElement-types hiprintEpContainer">
+                    <ul class="hiprint-printElement-type">
+
+                        <li>
+                            <span class="title"><code>拖拽列表</code></span>
+                            <ul>
+                                <li>
+                                    <a class="ep-draggable-item" tid="testModule.text" style="">
+
+                                        <span class="glyphicon glyphicon-text-width" aria-hidden="true"></span>
+                                        <span class="glyphicon-class">文本</span>
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="ep-draggable-item" tid="testModule.image" style="">
+                                        <span class="glyphicon glyphicon-picture" aria-hidden="true"></span>
+                                        <span class="glyphicon-class">图片</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="ep-draggable-item" tid="testModule.longText">
+                                        <span class="glyphicon glyphicon-subscript" aria-hidden="true"></span>
+                                        <span class="glyphicon-class">长文</span>
+
+
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="ep-draggable-item" tid="testModule.tableCustom" style="">
+                                        <span class="glyphicon glyphicon-th" aria-hidden="true"></span>
+                                        <span class="glyphicon-class">表格</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <span class="title">辅助</span>
+                            <ul>
+                                <li>
+                                    <a class="ep-draggable-item" tid="testModule.hline" style="">
+                                        <span class="glyphicon glyphicon-resize-horizontal" aria-hidden="true"></span>
+                                        <span class="glyphicon-class">横线</span>
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="ep-draggable-item" tid="testModule.vline" style="">
+                                        <span class="glyphicon glyphicon-resize-vertical" aria-hidden="true"></span>
+                                        <span class="glyphicon-class">竖线</span>
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="ep-draggable-item" tid="testModule.rect" style="position: static; left: 15px; top: 452px;">
+                                        <span class="glyphicon glyphicon-unchecked" aria-hidden="true"></span>
+                                        <span class="glyphicon-class">矩形</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="paint_area">
+                <div class="ruler">
+                    <div id="hiprint-printTemplate" class="hiprint-printTemplate" style="margin-top:20px;"></div>
+                </div>
+            </div>
+            <div class="tool">
+                <sider class="hinnn-layout-sider" style="">
+                    <div class="container height-100-per" style="width:250px;">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div id="PrintElementOptionSetting" style="margin-top:10px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </sider>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog modal-lg" role="document" style="width: 825px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">打印预览</h4>
+                </div>
+
+                <div class="modal-body">
+<!--                    <button type="button" class="btn btn-danger" id="A4_printByHtml">打印</button>-->
+                    <div class="prevViewDiv"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!--[[ 测试专用  单独使用无需引入  -->
+    <script src="custom_test/custom-etype-provider.js"></script>
+    <script src="custom_test/custom-print-json.js"></script>
+    <script src="custom_test/print-data.js"></script>
+    <!--测试专用  单独使用无需引入 ]]  -->
+    <!--单独使用无需引入  -->
+    <script src="polyfill.min.js"></script>
+    <script src="plugins/jquery.minicolors.min.js"></script>
+    <script src="hiprint.bundle.js"></script>
+    <script src="plugins/jquery.hiwprint.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+    <script src="plugins/jspdf/canvas2image.js"></script>
+    <script src="plugins/jspdf/canvg.min.js"></script>
+    <script src="plugins/jspdf/html2canvas.min.js"></script>
+    <script src="plugins/jspdf/jspdf.min.js"></script>
+
+    <script>
+        var hiprintTemplate;
+        $(document).ready(function () {
+           
+            //初始化打印插件
+            hiprint.init({
+                providers: [new customElementTypeProvider()]
+            });
+
+            //hiprint.PrintElementTypeManager.build('.hiprintEpContainer', 'testModule');
+            //设置左侧拖拽事件
+            hiprint.PrintElementTypeManager.buildByHtml($('.ep-draggable-item'));
+
+            <!-- 创建打印模板对象-->
+            hiprintTemplate = new hiprint.PrintTemplate({
+                template: customPrintJson,
+                settingContainer: '#PrintElementOptionSetting',
+                paginationContainer: '.hiprint-printPagination'
+            });
+            // 自定义字段
+            hiprintTemplate.setFields(
+                [
+                    {field:'name',text:'姓名'},
+                    {field:'table',text:'表格'},
+                    {field:'url',text:'图片'}
+                ]);
+            //打印设计
+            hiprintTemplate.design('#hiprint-printTemplate');
+
+            $('#A4_preview').click(function () {
+                $('#myModal .modal-body .prevViewDiv').html(hiprintTemplate.getHtml(printData))
+                $('#myModal').modal('show')
+            });
+            $('#A4_toPdf').click(function () {
+                hiprintTemplate.toPdf(printData,"pdf文件");
+            });
+            $('#A4_directPrint').click(function () {
+                hiprintTemplate.print(printData);
+            });
+            // $('#A4_printByHtml').click(function () {
+            //     hiprintTemplate.printByHtml($('#myModal .modal-body .prevViewDiv'));
+            // })
+            // $('#A4_getJson_toTextarea').click(function () {
+            //     console.log(JSON.stringify(hiprintTemplate.getJson()))
+            // })
+            // $('#A4_getHtml_toTextarea').click(function () {
+            //     $('#A4_textarea_html').val(hiprintTemplate.getHtml(printData)[0].outerHTML)
+            // })
+        });
+
+        //旋转
+        var rotatePaper = function () {
+            hiprintTemplate.rotatePaper();
+        }
+        var clearTemplate = function () {
+            hiprintTemplate.clear();
+        }
+
+    </script>
+
+</body>
+</html>
