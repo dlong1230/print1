@@ -1,18 +1,16 @@
 package com.dlong.print.controller;
 
+import com.alibaba.druid.support.json.JSONUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.annotation.Resource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 模板控制器
@@ -66,7 +64,10 @@ public class TemplateController {
     @ResponseBody
     @RequestMapping("/queryEleList.htm")
     public List<Map<String, Object>> queryEleList(Integer type) {
-        String sql = "select id,name from be_ticket_element where isdeleted=0 and type=" + type;
+        String sql = "select id field,name text from be_ticket_element where isdeleted=0 ";
+        if (type != null && type > 0) {
+            sql = sql + "and type=" + type;
+        }
         List<Map<String, Object>> list_maps = jdbcTemplate.queryForList(sql);
         return list_maps;
     }
@@ -81,7 +82,73 @@ public class TemplateController {
     }
     @RequestMapping("/print.htm")
     public String print() {
-        return "custom.html";
+        return "/custom.html";
+    }
+
+    // http://localhost/template/print/addTemplate.htm?name=模板2
+    @ResponseBody
+    @RequestMapping("/addTemplate.htm")
+    public int addTemplate(String name) {
+        String sql = "INSERT INTO be_ticket_template (`id`, `name`, `schoolId`, `designStr`, `customEleIds`, `enable`, `isDeleted`, `createdBy`, `createdOn`, `modifiedBy`, `modifiedOn`, `createDate`) VALUES (null, '" + name + "', 0, NULL, NULL, 1, 0, 1, '2023-02-03 11:44:12', 1, '2023-02-03 11:44:12', 123);";
+        int row = jdbcTemplate.update(sql);
+        return row;
+    }
+
+    // http://localhost/template/print/updateTemplate.htm?designStr=模板2&customEleIds=1,2,3&id=1
+    @ResponseBody
+    @RequestMapping("/updateTemplate.htm")
+    public int updateTemplate(String designStr, String customEleIds, Long id) {
+        String sql = "update be_ticket_template set designStr='"+ designStr +"', customEleIds= '"+ customEleIds +"'where id=" + id;
+        int row = jdbcTemplate.update(sql);
+        return row;
+    }
+
+    // http://localhost/template/print/getTemplateById.htm?id=2
+    @ResponseBody
+    @RequestMapping("/getTemplateById.htm")
+    public List<Map<String, Object>> getTemplateById(Long id) {
+        String sql = "select name,designStr,customEleIds from be_ticket_template where isdeleted=0 and id=" + id;
+        List<Map<String, Object>> list_maps = jdbcTemplate.queryForList(sql);
+        return list_maps;
+    }
+
+    // http://localhost/template/print/getModeWithData.htm?id=2
+    @ResponseBody
+    @RequestMapping("/getModeWithData.htm")
+    public String getModeWithData(Long id) {
+
+
+
+        // 数据组装
+        Map<String, Object> map = new HashMap<>();
+        String name = "小王子";
+        String url = "http://deploy.yixianinfo.com/static/1e94a32b/images/svgs/logo.svg";
+        List<Map<String, Object>> list = new ArrayList<>();
+        Map<String, Object> map1 = new HashMap<>();
+        map1.put("1", name);
+        list.add(map1);
+        Map<String, Object> map2 = new HashMap<>();
+        map2.put("3", url);
+        list.add(map2);
+        String tableStr = JSONUtils.toJSONString(list);
+
+        map.put("1", name);
+        map.put("3", url);
+        map.put("2", tableStr);
+        String str1 = JSONUtils.toJSONString(map);
+//        String sql = "select name,designStr,customEleIds from be_ticket_template where isdeleted=0 and id=" + id;
+//        List<Map<String, Object>> list_maps = jdbcTemplate.queryForList(sql);
+        return str1;
+    }
+
+    public static void main(String[] args) {
+        String name = "小王子";
+        String url = "http://deploy.yixianinfo.com/static/1e94a32b/images/svgs/logo.svg";
+        String table = "2:[{" + name + "},{" + url + "}]";
+        String str = "{" + name + "," + url + "," + table + "}";
+        String str1 = JSONUtils.toJSONString(str);
+        Object obj = JSONUtils.parse(str1);
+        System.out.println(obj);
     }
 
 }

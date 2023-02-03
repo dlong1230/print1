@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8" />
     <title></title>
-    <link href="css/hiprint.css" rel="stylesheet" />
-    <link href="css/print-lock.css" rel="stylesheet" />
+    <link href="/css/hiprint.css" rel="stylesheet" />
+    <link href="/css/print-lock.css" rel="stylesheet" />
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
@@ -18,7 +18,7 @@
                 <a href="${initParam.schoolServerName}/auth/school/ticket/template/list.htm"><--返回上一级</a>
             </div>
             <div class="title">
-                <p style="align-self:center;max-width: 574px;font-size: xx-large">${template.name}</p>
+                <p id="template_title" style="align-self:center;max-width: 574px;font-size: xx-large"></p>
             </div>
             <div class="right_button">
                     <a class="hiprint-toolbar-item" onclick="rotatePaper()">旋转</a>
@@ -154,60 +154,76 @@
 
 
     <!--[[ 测试专用  单独使用无需引入  -->
-    <script src="custom_test/custom-etype-provider.js"></script>
-    <script src="custom_test/custom-print-json.js"></script>
-    <script src="custom_test/print-data.js"></script>
+    <script src="/custom_test/print-data.js"></script>
     <!--测试专用  单独使用无需引入 ]]  -->
     <!--单独使用无需引入  -->
-    <script src="polyfill.min.js"></script>
-    <script src="plugins/jquery.minicolors.min.js"></script>
-    <script src="hiprint.bundle.js"></script>
-    <script src="plugins/jquery.hiwprint.js"></script>
+    <script src="/polyfill.min.js"></script>
+    <script src="/plugins/jquery.minicolors.min.js"></script>
+    <script src="/hiprint.bundle.js"></script>
+    <script src="/plugins/jquery.hiwprint.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
-    <script src="plugins/jspdf/canvas2image.js"></script>
-    <script src="plugins/jspdf/canvg.min.js"></script>
-    <script src="plugins/jspdf/html2canvas.min.js"></script>
-    <script src="plugins/jspdf/jspdf.min.js"></script>
+    <script src="/plugins/jspdf/canvas2image.js"></script>
+    <script src="/plugins/jspdf/canvg.min.js"></script>
+    <script src="/plugins/jspdf/html2canvas.min.js"></script>
+    <script src="/plugins/jspdf/jspdf.min.js"></script>
 
     <script>
         var hiprintTemplate;
         $(document).ready(function () {
-           
-            //初始化打印插件
-            hiprint.init({
-                providers: [new customElementTypeProvider()]
-            });
 
-            //hiprint.PrintElementTypeManager.build('.hiprintEpContainer', 'testModule');
+            //初始化打印插件
+            hiprint.init({});
+
             //设置左侧拖拽事件
             hiprint.PrintElementTypeManager.buildByHtml($('.ep-draggable-item'));
 
             <!-- 创建打印模板对象-->
-            hiprintTemplate = new hiprint.PrintTemplate({
-                template: customPrintJson,
-                settingContainer: '#PrintElementOptionSetting',
-                paginationContainer: '.hiprint-printPagination'
-            });
-            // 自定义字段
-            hiprintTemplate.setFields(
-                [
-                    {field:'name',text:'姓名'},
-                    {field:'table',text:'表格'},
-                    {field:'url',text:'图片'}
-                ]);
-            //打印设计
-            hiprintTemplate.design('#hiprint-printTemplate');
+            $.ajax({
+                type: 'GET',   //POST/PUT/DELETE...
+                url: 'http://localhost/template/print/getTemplateById.htm',
+                data: 'id=2',  //{k:v, k:v}
+                success: function (customPrintJson){
+                    $('#template_title').html(customPrintJson[0].name)
+                    hiprintTemplate = new hiprint.PrintTemplate({
+                        template: customPrintJson[0].designStr == null ? null : JSON.parse(customPrintJson[0].designStr),
+                        settingContainer: '#PrintElementOptionSetting',
+                        paginationContainer: '.hiprint-printPagination'
+                    });
 
-            $('#A4_preview').click(function () {
-                $('#myModal .modal-body .prevViewDiv').html(hiprintTemplate.getHtml(printData))
-                $('#myModal').modal('show')
-            });
-            $('#A4_toPdf').click(function () {
-                hiprintTemplate.toPdf(printData,"pdf文件");
-            });
-            $('#A4_directPrint').click(function () {
-                hiprintTemplate.print(printData);
-            });
+                    // 获取自定义字段
+                    $.ajax({
+                        type: 'GET',   //POST/PUT/DELETE...
+                        url: 'http://localhost/template/print/queryEleList.htm',
+                        data: '',  //{k:v, k:v}
+                        success: function (json){
+                            hiprintTemplate.setFields(json);
+                        },            //响应成功后的回调
+                    })
+
+                    //打印设计
+                    hiprintTemplate.design('#hiprint-printTemplate');
+
+                    $('#A4_preview').click(function () {
+                        $.ajax({
+                            type: 'GET',   //POST/PUT/DELETE...
+                            url: 'http://localhost/template/print/getModeWithData.htm',
+                            data: 'id=2',  //{k:v, k:v}
+                            success: function (json){
+                                $('#myModal .modal-body .prevViewDiv').html(hiprintTemplate.getHtml(JSON.parse(json)))
+                                $('#myModal').modal('show')
+                            }
+                        })
+                    });
+                    $('#A4_toPdf').click(function () {
+                        hiprintTemplate.toPdf(printData,"pdf文件");
+                    });
+                    $('#A4_directPrint').click(function () {
+                        hiprintTemplate.print(printData);
+                    });
+                },            //响应成功后的回调
+            })
+           
+
             // $('#A4_printByHtml').click(function () {
             //     hiprintTemplate.printByHtml($('#myModal .modal-body .prevViewDiv'));
             // })
