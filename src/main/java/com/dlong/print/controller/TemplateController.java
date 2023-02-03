@@ -142,12 +142,23 @@ public class TemplateController {
     }
 
     public static void main(String[] args) {
+        Map<String, Object> map = new HashMap<>();
         String name = "小王子";
         String url = "http://deploy.yixianinfo.com/static/1e94a32b/images/svgs/logo.svg";
-        String table = "2:[{" + name + "},{" + url + "}]";
-        String str = "{" + name + "," + url + "," + table + "}";
-        String str1 = JSONUtils.toJSONString(str);
-        Object obj = JSONUtils.parse(str1);
+        List<Map<String, Object>> list = new ArrayList<>();
+        Map<String, Object> map1 = new HashMap<>();
+        map1.put("1", name);
+        list.add(map1);
+        Map<String, Object> map2 = new HashMap<>();
+        map2.put("3", url);
+        list.add(map2);
+        String tableStr = JSONUtils.toJSONString(list);
+
+        map.put("1", name);
+        map.put("3", url);
+        map.put("2", tableStr);
+        String str = JSONUtils.toJSONString(map);
+        Object obj = JSONUtils.parse(str);
         System.out.println(obj);
     }
 
