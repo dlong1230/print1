@@ -1,6 +1,7 @@
 package com.dlong.print.controller;
 
 import com.alibaba.druid.support.json.JSONUtils;
+import com.alibaba.druid.util.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Controller;
@@ -117,6 +118,33 @@ public class TemplateController {
     @RequestMapping("/getModeWithData.htm")
     public String getModeWithData(Long id) {
 
+        // 获取元素列表
+        String eleIds="1,2,3";
+
+        // 获取元素详情
+        Map<String,String> newMap = new HashMap<>();
+        newMap.put("1","[{\"be_app_stuprof\":\"XingMing\"}]");
+        newMap.put("2","[{\"be_app_stuprof\":\"XingMing\"},{\"be_app_stuprof\":\"ShenChaNR\"}]");
+        newMap.put("3","[{\"be_app_stuprof\":\"ShenChaNR\"}]");
+
+        List<Object> objList = new ArrayList<>();
+        for (String key:newMap.keySet()){
+            Object obj = JSONUtils.parse(newMap.get(key));
+            objList.add(obj);
+        }
+        System.out.println(objList);
+        List<Map<String, String>> mapList = new ArrayList<>();
+        for (Object obj:objList) {
+            mapList.add((Map<String, String>) obj);
+        }
+        System.out.println(mapList);
+//        Map<String, String>> mapList = new ArrayList<>();
+
+
+//        List<Map<String,String>> eleList = new ArrayList<>();
+//        Map<String, Object> mape1 = new HashMap<>();
+//        mape1.put("be_app_stuprof","XingMing");
+//        eleList.
 
 
         // 数据组装
@@ -126,40 +154,47 @@ public class TemplateController {
         List<Map<String, Object>> list = new ArrayList<>();
         Map<String, Object> map1 = new HashMap<>();
         map1.put("1", name);
+        map1.put("3", url);
         list.add(map1);
         Map<String, Object> map2 = new HashMap<>();
+        map2.put("1", name);
         map2.put("3", url);
         list.add(map2);
-        String tableStr = JSONUtils.toJSONString(list);
+//        String tableStr = JSONUtils.toJSONString(list);
 
         map.put("1", name);
         map.put("3", url);
-        map.put("2", tableStr);
+        map.put("2", list);
         String str1 = JSONUtils.toJSONString(map);
+//        Object obj = JSONUtils.parse(str1);
 //        String sql = "select name,designStr,customEleIds from be_ticket_template where isdeleted=0 and id=" + id;
 //        List<Map<String, Object>> list_maps = jdbcTemplate.queryForList(sql);
         return str1;
     }
 
     public static void main(String[] args) {
-        Map<String, Object> map = new HashMap<>();
-        String name = "小王子";
-        String url = "http://deploy.yixianinfo.com/static/1e94a32b/images/svgs/logo.svg";
-        List<Map<String, Object>> list = new ArrayList<>();
-        Map<String, Object> map1 = new HashMap<>();
-        map1.put("1", name);
-        list.add(map1);
-        Map<String, Object> map2 = new HashMap<>();
-        map2.put("3", url);
-        list.add(map2);
-        String tableStr = JSONUtils.toJSONString(list);
+        Map<String,String> newMap = new HashMap<>();
+        newMap.put("1","[{\"be_app_stuprof\":\"XingMing\"}]");
+        newMap.put("2","[{\"be_app_stuprof\":\"XingMing\"},{\"be_app_stuprof\":\"ShenChaNR\"}]");
+        newMap.put("3","[{\"be_app_stuprof\":\"ShenChaNR\"}]");
 
-        map.put("1", name);
-        map.put("3", url);
-        map.put("2", tableStr);
-        String str = JSONUtils.toJSONString(map);
-        Object obj = JSONUtils.parse(str);
-        System.out.println(obj);
+        List<List<Map<String, String>>> objList = new ArrayList<>();
+        for (String key:newMap.keySet()){
+            List<Map<String, String>> obj = (List<Map<String, String>>) JSONUtils.parse(newMap.get(key));
+            objList.add(obj);
+        }
+        System.out.println(objList);
+        Set<String> tableNameList = new HashSet<>();
+        List<Map<String, String>> columnList = new ArrayList<>();
+        for (List<Map<String, String>> list:objList) {
+            for (int i=0;i<list.size();i++) {
+                Map<String, String> map = list.get(i);
+                tableNameList = map.keySet();
+//                columnList.add();
+            }
+
+        }
+        System.out.println(tableNameList);
     }
 
 }
