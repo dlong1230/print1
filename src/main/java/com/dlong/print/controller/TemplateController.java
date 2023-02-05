@@ -189,12 +189,16 @@ public class TemplateController {
         for (List<Map<String, String>> list:objList) {
             for (int i=0;i<list.size();i++) {
                 Map<String, String> map = list.get(i);
-                tableNameList = map.keySet();
-//                columnList.add();
+                tableNameList.add(map.keySet());
+                Map<String, String> map1 = new HashMap<>();
+                map1.put(map.get(keySet()),map.get(keySet()))
+                columnList.add(map1);
             }
 
         }
         System.out.println(tableNameList);
+        System.out.println(map1);
+        
     }
 
 }
