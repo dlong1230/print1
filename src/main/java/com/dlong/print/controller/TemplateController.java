@@ -127,49 +127,103 @@ public class TemplateController {
         newMap.put("2","[{\"be_app_stuprof\":\"XingMing\"},{\"be_app_stuprof\":\"ShenChaNR\"}]");
         newMap.put("3","[{\"be_app_stuprof\":\"ShenChaNR\"}]");
 
-        List<Object> objList = new ArrayList<>();
+        List<List<Map<String, String>>> objList = new ArrayList<>();
+        Map<String, List<Map<String, String>>> objmap = new HashMap<>();
         for (String key:newMap.keySet()){
-            Object obj = JSONUtils.parse(newMap.get(key));
+            List<Map<String, String>> obj = (List<Map<String, String>>) JSONUtils.parse(newMap.get(key));
             objList.add(obj);
+            List<Map<String, String>> tempList = objmap.get(key);
+            if (tempList == null) {
+                tempList = new ArrayList<>();
+                objmap.putIfAbsent(key, tempList);
+            }
+            tempList.addAll(obj);
         }
         System.out.println(objList);
-        List<Map<String, String>> mapList = new ArrayList<>();
-        for (Object obj:objList) {
-            mapList.add((Map<String, String>) obj);
+        System.out.println(objmap);
+
+        Map<String, Set<String>> columnMap = new HashMap<>();
+        for (List<Map<String, String>> list:objList) {
+            for (Map<String, String> map : list) {
+                String key = (String) map.keySet().toArray()[0];
+                String value = (String) map.values().toArray()[0];
+                Set<String> tempList = columnMap.get(key);
+                if (tempList == null) {
+                    tempList = new HashSet<>();
+                    columnMap.putIfAbsent(key, tempList);
+                }
+                tempList.add(value);
+            }
         }
-        System.out.println(mapList);
-//        Map<String, String>> mapList = new ArrayList<>();
+        System.out.println(columnMap);
 
+        Map<String, List<Map<String, Object>>> map = new HashMap<>();
+        Map<String, String> columnAndValue = new HashMap<>();
+        for (String table:columnMap.keySet()) {
+            String sql = "select * from " + table +" where isdeleted=0 and baokaoid=1";
+            List<Map<String, Object>> list_maps = jdbcTemplate.queryForList(sql);
+            System.out.println(list_maps);
+            map.put(table, list_maps);
+            Set<String> colList = columnMap.get(table);
+            for (String col:colList) {
+                columnAndValue.put(table + "-" + col, (String) list_maps.get(0).get(col));
+            }
+        }
+        System.out.println(columnAndValue);
 
-//        List<Map<String,String>> eleList = new ArrayList<>();
-//        Map<String, Object> mape1 = new HashMap<>();
-//        mape1.put("be_app_stuprof","XingMing");
-//        eleList.
+        Map<String,String> newMap1 = new HashMap<>();
+        for (String idStr : objmap.keySet()) {
+            List<Map<String, String>> valueNames = objmap.get(idStr);
+            List<Map<String, String>> strList = new ArrayList<>();
+            for (Map<String, String> valueName : valueNames) {
+                for(String valN:valueName.keySet()) {
+                    String tableName = valN;
+                    String cloumnName = valueName.get(valN);
+                    if (valueNames.size()>1) {
+                        Map<String, String> strMap = new HashMap<>();
+                        String key=tableName + "-" + cloumnName;
+                        strMap.put(key, columnAndValue.get(key));
+                        strList.add(strMap);
+                        newMap1.put(idStr, strList.toString());
+                    } else {
+                        newMap1.put(idStr, columnAndValue.get(tableName + "-" + cloumnName));
+                    }
+                }
+            }
+        }
+        String str2 = JSONUtils.toJSONString(newMap1);
+        System.out.println(str2);
+
+//        Integer type = 1;
+//        if (type != 3) {
+//
+//
+//        }
 
 
         // 数据组装
-        Map<String, Object> map = new HashMap<>();
-        String name = "小王子";
-        String url = "http://deploy.yixianinfo.com/static/1e94a32b/images/svgs/logo.svg";
-        List<Map<String, Object>> list = new ArrayList<>();
-        Map<String, Object> map1 = new HashMap<>();
-        map1.put("1", name);
-        map1.put("3", url);
-        list.add(map1);
-        Map<String, Object> map2 = new HashMap<>();
-        map2.put("1", name);
-        map2.put("3", url);
-        list.add(map2);
-//        String tableStr = JSONUtils.toJSONString(list);
-
-        map.put("1", name);
-        map.put("3", url);
-        map.put("2", list);
-        String str1 = JSONUtils.toJSONString(map);
+//        Map<String, Object> mapall = new HashMap<>();
+//        String name = "小王子";
+//        String url = "http://deploy.yixianinfo.com/static/1e94a32b/images/svgs/logo.svg";
+//        List<Map<String, Object>> list = new ArrayList<>();
+//        Map<String, Object> map1 = new HashMap<>();
+//        map1.put("1", name);
+//        map1.put("3", url);
+//        list.add(map1);
+//        Map<String, Object> map2 = new HashMap<>();
+//        map2.put("1", name);
+//        map2.put("3", url);
+//        list.add(map2);
+////        String tableStr = JSONUtils.toJSONString(list);
+//
+//        mapall.put("1", name);
+//        mapall.put("3", url);
+//        mapall.put("2", list);
+//        String str1 = JSONUtils.toJSONString(mapall);
 //        Object obj = JSONUtils.parse(str1);
 //        String sql = "select name,designStr,customEleIds from be_ticket_template where isdeleted=0 and id=" + id;
 //        List<Map<String, Object>> list_maps = jdbcTemplate.queryForList(sql);
-        return str1;
+        return str2;
     }
 
     public static void main(String[] args) {
@@ -184,17 +238,22 @@ public class TemplateController {
             objList.add(obj);
         }
         System.out.println(objList);
-        Set<String> tableNameList = new HashSet<>();
-        List<Map<String, String>> columnList = new ArrayList<>();
+        Map<String, Set<String>> columnMap = new HashMap<>();
         for (List<Map<String, String>> list:objList) {
-            for (int i=0;i<list.size();i++) {
-                Map<String, String> map = list.get(i);
-                tableNameList = map.keySet();
-//                columnList.add();
+            for (Map<String, String> map : list) {
+                String key = (String) map.keySet().toArray()[0];
+                String value = (String) map.values().toArray()[0];
+                Set<String> tempList = columnMap.get(key);
+                if (tempList == null) {
+                    tempList = new HashSet<>();
+                    columnMap.putIfAbsent(key, tempList);
+                }
+                tempList.add(value);
             }
-
         }
-        System.out.println(tableNameList);
+
+
+        System.out.println(columnMap);
     }
 
 }
