@@ -160,7 +160,7 @@ public class TemplateController {
         Map<String, List<Map<String, Object>>> map = new HashMap<>();
         Map<String, String> columnAndValue = new HashMap<>();
         for (String table:columnMap.keySet()) {
-            String sql = "select * from " + table +" where isdeleted=0 and baokaoid=1";
+            String sql = "select * from " + table +" where isdeleted=0 and YongHuID=1078403";
             List<Map<String, Object>> list_maps = jdbcTemplate.queryForList(sql);
             System.out.println(list_maps);
             map.put(table, list_maps);
@@ -194,35 +194,6 @@ public class TemplateController {
         String str2 = JSONUtils.toJSONString(newMap1);
         System.out.println(str2);
 
-//        Integer type = 1;
-//        if (type != 3) {
-//
-//
-//        }
-
-
-        // 数据组装
-//        Map<String, Object> mapall = new HashMap<>();
-//        String name = "小王子";
-//        String url = "http://deploy.yixianinfo.com/static/1e94a32b/images/svgs/logo.svg";
-//        List<Map<String, Object>> list = new ArrayList<>();
-//        Map<String, Object> map1 = new HashMap<>();
-//        map1.put("1", name);
-//        map1.put("3", url);
-//        list.add(map1);
-//        Map<String, Object> map2 = new HashMap<>();
-//        map2.put("1", name);
-//        map2.put("3", url);
-//        list.add(map2);
-////        String tableStr = JSONUtils.toJSONString(list);
-//
-//        mapall.put("1", name);
-//        mapall.put("3", url);
-//        mapall.put("2", list);
-//        String str1 = JSONUtils.toJSONString(mapall);
-//        Object obj = JSONUtils.parse(str1);
-//        String sql = "select name,designStr,customEleIds from be_ticket_template where isdeleted=0 and id=" + id;
-//        List<Map<String, Object>> list_maps = jdbcTemplate.queryForList(sql);
         return str2;
     }
 
