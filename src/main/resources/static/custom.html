@@ -209,7 +209,7 @@
                             url: 'http://localhost/template/print/getModeWithData.htm',
                             data: 'id=2',  //{k:v, k:v}
                             success: function (json){
-                                $('#myModal .modal-body .prevViewDiv').html(hiprintTemplate.getHtml(JSON.parse(json)))
+                                $('#myModal .modal-body .prevViewDiv').html(hiprintTemplate.getHtml(json))
                                 $('#myModal').modal('show')
                             }
                         })

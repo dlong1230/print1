@@ -1,7 +1,7 @@
 package com.dlong.print.controller;
 
-import com.alibaba.druid.support.json.JSONUtils;
-import com.alibaba.druid.util.StringUtils;
+import com.dlong.print.model.ElementDO;
+import com.dlong.print.model.TabDO;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Controller;
@@ -116,115 +116,131 @@ public class TemplateController {
     // http://localhost/template/print/getModeWithData.htm?id=2
     @ResponseBody
     @RequestMapping("/getModeWithData.htm")
-    public String getModeWithData(Long id) {
+    public Map<Long, Object> getModeWithData(Long id) {
+        List<ElementDO> elementDOList = buildEleList();
 
-        // 获取元素列表
-        String eleIds="1,2,3";
-
-        // 获取元素详情
-        Map<String,String> newMap = new HashMap<>();
-        newMap.put("1","[{\"be_app_stuprof\":\"XingMing\"}]");
-        newMap.put("2","[{\"be_app_stuprof\":\"XingMing\"},{\"be_app_stuprof\":\"ShenChaNR\"}]");
-        newMap.put("3","[{\"be_app_stuprof\":\"ShenChaNR\"}]");
-
-        List<List<Map<String, String>>> objList = new ArrayList<>();
-        Map<String, List<Map<String, String>>> objmap = new HashMap<>();
-        for (String key:newMap.keySet()){
-            List<Map<String, String>> obj = (List<Map<String, String>>) JSONUtils.parse(newMap.get(key));
-            objList.add(obj);
-            List<Map<String, String>> tempList = objmap.get(key);
-            if (tempList == null) {
-                tempList = new ArrayList<>();
-                objmap.putIfAbsent(key, tempList);
+        Set<String> sqlSet = new HashSet<>();
+        for (ElementDO ele : elementDOList) {
+            String sql = ele.getSelectSql();
+            if (sql == null || sql == "") {
+                continue;
             }
-            tempList.addAll(obj);
-        }
-        System.out.println(objList);
-        System.out.println(objmap);
-
-        Map<String, Set<String>> columnMap = new HashMap<>();
-        for (List<Map<String, String>> list:objList) {
-            for (Map<String, String> map : list) {
-                String key = (String) map.keySet().toArray()[0];
-                String value = (String) map.values().toArray()[0];
-                Set<String> tempList = columnMap.get(key);
-                if (tempList == null) {
-                    tempList = new HashSet<>();
-                    columnMap.putIfAbsent(key, tempList);
-                }
-                tempList.add(value);
+            if (ele.getType() != 5) {
+                sql = sql + " limit 1";
+                ele.setSelectSql(sql);
             }
+            sqlSet.add(sql);
         }
-        System.out.println(columnMap);
-
-        Map<String, List<Map<String, Object>>> map = new HashMap<>();
-        Map<String, String> columnAndValue = new HashMap<>();
-        for (String table:columnMap.keySet()) {
-            String sql = "select * from " + table +" where isdeleted=0 and YongHuID=1078403";
+        // 执行对应的sql
+        Map<String, List<Map<String, Object>>> sqlMap = new HashMap<>();
+        for (String sql : sqlSet) {
             List<Map<String, Object>> list_maps = jdbcTemplate.queryForList(sql);
-            System.out.println(list_maps);
-            map.put(table, list_maps);
-            Set<String> colList = columnMap.get(table);
-            for (String col:colList) {
-                columnAndValue.put(table + "-" + col, (String) list_maps.get(0).get(col));
-            }
+            sqlMap.put(sql, list_maps);
         }
-        System.out.println(columnAndValue);
 
-        Map<String,String> newMap1 = new HashMap<>();
-        for (String idStr : objmap.keySet()) {
-            List<Map<String, String>> valueNames = objmap.get(idStr);
-            List<Map<String, String>> strList = new ArrayList<>();
-            for (Map<String, String> valueName : valueNames) {
-                for(String valN:valueName.keySet()) {
-                    String tableName = valN;
-                    String cloumnName = valueName.get(valN);
-                    if (valueNames.size()>1) {
-                        Map<String, String> strMap = new HashMap<>();
-                        String key=tableName + "-" + cloumnName;
-                        strMap.put(key, columnAndValue.get(key));
-                        strList.add(strMap);
-                        newMap1.put(idStr, strList.toString());
+        Map<Long, Object> ap = new HashMap<>();
+        // 遍历自定义元素，放入value
+        for (ElementDO elementDO : elementDOList) {
+            List<Map<String, Object>> sqlMapValueList = sqlMap.get(elementDO.getSelectSql());
+            if (elementDO.getType() != 5) {
+                StringBuilder eleValue = new StringBuilder();
+                for (TabDO tab : elementDO.getTabList()) {
+                    if (tab.getTableName() != null) {
+                        eleValue.append(sqlMapValueList.get(0).get(tab.getFieldName()));
                     } else {
-                        newMap1.put(idStr, columnAndValue.get(tableName + "-" + cloumnName));
+                        eleValue.append(tab.getFieldName());
                     }
                 }
+                elementDO.setValue(eleValue);
+            } else {
+                List<Object> listValue = new ArrayList<>();
+                Map<String, String> listValueMap;
+                for (Map<String, Object> valueMap : sqlMapValueList) {
+                    listValueMap = new HashMap<>();
+                    for (TabDO tab : elementDO.getTabList()) {
+                        listValueMap.put(tab.getFieldName(), (String) valueMap.get(tab.getFieldName()));
+                    }
+                    listValue.add(listValueMap);
+                }
+                elementDO.setValue(listValue);
             }
+            ap.put(elementDO.getId(), elementDO.getValue());
         }
-        String str2 = JSONUtils.toJSONString(newMap1);
-        System.out.println(str2);
-
-        return str2;
+        System.out.println(ap);
+        return ap;
     }
 
-    public static void main(String[] args) {
-        Map<String,String> newMap = new HashMap<>();
-        newMap.put("1","[{\"be_app_stuprof\":\"XingMing\"}]");
-        newMap.put("2","[{\"be_app_stuprof\":\"XingMing\"},{\"be_app_stuprof\":\"ShenChaNR\"}]");
-        newMap.put("3","[{\"be_app_stuprof\":\"ShenChaNR\"}]");
+    private List<ElementDO> buildEleList() {
+        List<ElementDO> elementDOList = new ArrayList<>();
+        ElementDO elementDO1 = new ElementDO();
+        elementDO1.setId(1L);
+        elementDO1.setName("姓名");
+        elementDO1.setType(1);
+        TabDO tabDO1 = new TabDO();
+        tabDO1.setTableName("be_app_stuprof");
+        tabDO1.setFieldName("XingMing");
+        elementDO1.setTabList(Collections.singletonList(tabDO1));
+        elementDO1.setSelectSql("select * from be_app_stuprof where YongHuID=1078403");
+        System.out.println(elementDO1);
+        elementDOList.add(elementDO1);
 
-        List<List<Map<String, String>>> objList = new ArrayList<>();
-        for (String key:newMap.keySet()){
-            List<Map<String, String>> obj = (List<Map<String, String>>) JSONUtils.parse(newMap.get(key));
-            objList.add(obj);
-        }
-        System.out.println(objList);
-        Map<String, Set<String>> columnMap = new HashMap<>();
-        for (List<Map<String, String>> list:objList) {
-            for (Map<String, String> map : list) {
-                String key = (String) map.keySet().toArray()[0];
-                String value = (String) map.values().toArray()[0];
-                Set<String> tempList = columnMap.get(key);
-                if (tempList == null) {
-                    tempList = new HashSet<>();
-                    columnMap.putIfAbsent(key, tempList);
-                }
-                tempList.add(value);
-            }
-        }
+        ElementDO elementDO2 = new ElementDO();
+        elementDO2.setId(6L);
+        elementDO2.setName("性别");
+        elementDO2.setType(1);
+        TabDO tabDO2 = new TabDO();
+        tabDO2.setTableName("be_app_stuprof");
+        tabDO2.setFieldName("XingBie");
+        elementDO2.setTabList(Collections.singletonList(tabDO2));
+        elementDO2.setSelectSql("select * from be_app_stuprof where YongHuID=1078403");
+        System.out.println(elementDO2);
+        elementDOList.add(elementDO2);
 
+        ElementDO elementDO3 = new ElementDO();
+        elementDO3.setId(7L);
+        elementDO3.setName("组合（姓名+性别）");
+        elementDO3.setType(1);
+        List<TabDO> tablist3 = new ArrayList<>();
+        tablist3.add(tabDO1);
+        TabDO tabDO3 = new TabDO();
+        tabDO3.setFieldName("（");
+        tablist3.add(tabDO3);
+        tablist3.add(tabDO2);
+        elementDO3.setTabList(tablist3);
+        elementDO3.setSelectSql("select * from be_app_stuprof where YongHuID=1078403");
+        System.out.println(elementDO3);
+        elementDOList.add(elementDO3);
 
-        System.out.println(columnMap);
+        ElementDO elementDO4 = new ElementDO();
+        elementDO4.setId(2L);
+        elementDO4.setName("表格（id）");
+        elementDO4.setType(5);
+        List<TabDO> tablist4 = new ArrayList<>();
+        TabDO tabDO4 = new TabDO();
+        tabDO4.setTableName("be_app_stuprof");
+        tabDO4.setFieldName("XueXiaoMC");
+        tablist4.add(tabDO4);
+        TabDO tabDO5 = new TabDO();
+        tabDO5.setTableName("be_app_stuprof");
+        tabDO5.setFieldName("KaoShiMC");
+        tablist4.add(tabDO5);
+        TabDO tabDO6 = new TabDO();
+        tabDO6.setTableName("be_app_stuprof");
+        tabDO6.setFieldName("KaoDianMC");
+        tablist4.add(tabDO6);
+        TabDO tabDO7 = new TabDO();
+        tabDO7.setTableName("be_app_stuprof");
+        tabDO7.setFieldName("ZhuanYeMC");
+        tablist4.add(tabDO7);
+//        TabDO tabDO8 = new TabDO();
+//        tabDO8.setTableName("be_app_stuprof");
+//        tabDO8.setFieldName("ZhuanYeMC");
+//        tablist4.add(tabDO8);
+        elementDO4.setTabList(tablist4);
+        elementDO4.setSelectSql("select * from be_app_stuprof where YongHuID=1078403");
+        elementDOList.add(elementDO4);
+        System.out.println(elementDO4);
+        return elementDOList;
     }
 
 }
